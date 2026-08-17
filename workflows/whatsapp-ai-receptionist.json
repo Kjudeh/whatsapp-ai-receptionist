@@ -1,0 +1,181 @@
+{
+  "id": "WAReceptionist01",
+  "name": "WhatsApp AI Receptionist",
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "nodes": [
+    {
+      "id": "wa-webhook",
+      "name": "WhatsApp Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "3f1e2d4c-9b8a-4c7d-a6e5-1f2b3c4d5e6f",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp",
+        "options": {}
+      }
+    },
+    {
+      "id": "route-message",
+      "name": "Route Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst data = body.data || {};\nconst key = data.key || {};\nconst env = process.env;\n\nconst businessName = env.BUSINESS_NAME || 'our business';\nconst evoUrl = (env.EVOLUTION_INTERNAL_URL || 'http://evolution-api.railway.internal:8080').replace(/\\/$/, '');\nconst instance = body.instance || data.instanceName || '';\nconst text = data.message?.conversation || data.message?.extendedTextMessage?.text || '';\nconst remoteJid = key.remoteJid || '';\nconst isGroup = remoteJid.endsWith('@g.us');\nconst fromMe = key.fromMe === true;\n\nconst out = {\n  route: 'ignore',\n  chatId: remoteJid,\n  number: remoteJid.split('@')[0],\n  instance,\n  pushName: data.pushName || '',\n  text,\n  sendUrl: `${evoUrl}/message/sendText/${encodeURIComponent(instance)}`,\n  sendHeaders: { apikey: env.EVOLUTION_API_KEY || '', 'Content-Type': 'application/json' }\n};\n\nif (!text || fromMe || isGroup || !instance || !remoteJid) {\n  return [{ json: out }];\n}\n\nconst handoff = (env.HANDOFF_KEYWORD || 'human').toLowerCase();\nif (text.toLowerCase().includes(handoff)) {\n  out.route = 'handoff';\n  out.replyText = env.HANDOFF_MESSAGE || `Thanks${out.pushName ? ' ' + out.pushName : ''}! A member of the ${businessName} team has been notified and will reply to you here shortly.`;\n  out.sendBody = { number: out.number, text: out.replyText };\n  return [{ json: out }];\n}\n\nconst hours = (env.OFFICE_HOURS || '24/7').trim();\nif (hours !== '24/7') {\n  const m = hours.match(/^(\\d{1,2}):(\\d{2})\\s*-\\s*(\\d{1,2}):(\\d{2})$/);\n  if (m) {\n    const tz = env.GENERIC_TIMEZONE || 'UTC';\n    const hm = new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());\n    const [h, min] = hm.split(':').map(Number);\n    const now = h * 60 + min;\n    const start = (+m[1]) * 60 + (+m[2]);\n    const end = (+m[3]) * 60 + (+m[4]);\n    const open = start <= end ? (now >= start && now < end) : (now >= start || now < end);\n    if (!open) {\n      out.route = 'closed';\n      out.replyText = env.OFFICE_CLOSED_MESSAGE || `Hi${out.pushName ? ' ' + out.pushName : ''}, thanks for contacting ${businessName}! We're currently closed (office hours: ${hours}). Leave your message here and we'll get back to you as soon as we reopen.`;\n      out.sendBody = { number: out.number, text: out.replyText };\n      return [{ json: out }];\n    }\n  }\n}\n\nout.route = 'ai';\nreturn [{ json: out }];"
+      }
+    },
+    {
+      "id": "needs-ai",
+      "name": "Needs AI?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-route-ai",
+              "leftValue": "={{ $json.route }}",
+              "rightValue": "ai",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "build-llm-request",
+      "name": "Build LLM Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, -100],
+      "parameters": {
+        "jsCode": "const msg = $input.first().json;\nconst env = process.env;\nconst provider = (env.LLM_PROVIDER || 'anthropic').toLowerCase();\nconst apiKey = env.LLM_API_KEY || '';\nconst businessName = env.BUSINESS_NAME || 'our business';\nconst handoff = env.HANDOFF_KEYWORD || 'human';\n\nconst system = `You are the AI receptionist for ${businessName}, replying on WhatsApp. ${env.SYSTEM_PROMPT || 'Answer customer questions helpfully and honestly. If you do not know an answer, say so.'} Keep replies short and friendly (under 120 words, plain text, no markdown). If the customer asks to speak with a person, tell them to reply with the word \"${handoff}\" to reach the team.`;\n\nlet llmUrl, llmHeaders, llmBody;\nif (provider === 'openai') {\n  llmUrl = 'https://api.openai.com/v1/chat/completions';\n  llmHeaders = { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' };\n  llmBody = {\n    model: env.LLM_MODEL || 'gpt-4o-mini',\n    max_tokens: 512,\n    messages: [\n      { role: 'system', content: system },\n      { role: 'user', content: msg.text }\n    ]\n  };\n} else {\n  llmUrl = 'https://api.anthropic.com/v1/messages';\n  llmHeaders = { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' };\n  llmBody = {\n    model: env.LLM_MODEL || 'claude-haiku-4-5-20251001',\n    max_tokens: 512,\n    system,\n    messages: [{ role: 'user', content: msg.text }]\n  };\n}\n\nreturn [{ json: { ...msg, provider, llmUrl, llmHeaders, llmBody } }];"
+      }
+    },
+    {
+      "id": "call-llm",
+      "name": "Call LLM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, -100],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.llmUrl }}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={{ JSON.stringify($json.llmHeaders) }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.llmBody) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "build-reply",
+      "name": "Build Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, -100],
+      "parameters": {
+        "jsCode": "const resp = $input.first().json;\nconst msg = $('Build LLM Request').first().json;\n\nlet reply = '';\nif (msg.provider === 'openai') {\n  reply = resp.choices?.[0]?.message?.content || '';\n} else if (Array.isArray(resp.content)) {\n  reply = resp.content.filter(b => b.type === 'text').map(b => b.text).join('\\n');\n}\n\nif (!reply) {\n  const handoff = process.env.HANDOFF_KEYWORD || 'human';\n  reply = `Sorry, I'm having trouble answering right now. Reply \"${handoff}\" and a member of our team will help you directly.`;\n}\n\nreturn [{ json: { sendUrl: msg.sendUrl, sendHeaders: msg.sendHeaders, sendBody: { number: msg.number, text: reply } } }];"
+      }
+    },
+    {
+      "id": "canned-reply",
+      "name": "Canned Reply?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [660, 120],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-route-not-ignore",
+              "leftValue": "={{ $json.route }}",
+              "rightValue": "ignore",
+              "operator": { "type": "string", "operation": "notEquals" }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "send-reply",
+      "name": "Send WhatsApp Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 0],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.sendUrl }}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={{ JSON.stringify($json.sendHeaders) }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.sendBody) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "ignore",
+      "name": "Ignore",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [880, 220],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "WhatsApp Webhook": {
+      "main": [[{ "node": "Route Message", "type": "main", "index": 0 }]]
+    },
+    "Route Message": {
+      "main": [[{ "node": "Needs AI?", "type": "main", "index": 0 }]]
+    },
+    "Needs AI?": {
+      "main": [
+        [{ "node": "Build LLM Request", "type": "main", "index": 0 }],
+        [{ "node": "Canned Reply?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build LLM Request": {
+      "main": [[{ "node": "Call LLM", "type": "main", "index": 0 }]]
+    },
+    "Call LLM": {
+      "main": [[{ "node": "Build Reply", "type": "main", "index": 0 }]]
+    },
+    "Build Reply": {
+      "main": [[{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }]]
+    },
+    "Canned Reply?": {
+      "main": [
+        [{ "node": "Send WhatsApp Reply", "type": "main", "index": 0 }],
+        [{ "node": "Ignore", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "pinData": {},
+  "tags": []
+}
