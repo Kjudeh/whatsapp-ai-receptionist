@@ -1,6 +1,6 @@
 # Deploy and Host WhatsApp AI Receptionist on Railway
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/zOvLHm)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/whatsapp-ai-receptionist)
 
 Deploy a **complete, working AI receptionist** for your business WhatsApp number in one click — not raw API plumbing. A customer messages your number; an AI agent (Claude or GPT, using **your own API key**) answers instantly with your business context, hands off to a human on request, and sends an office-hours auto-reply when you're closed.
 
