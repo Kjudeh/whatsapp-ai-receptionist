@@ -19,4 +19,12 @@ until n8n import:workflow --separate --input=/preloaded-workflows >/tmp/import.l
 done
 [ "$i" -lt 12 ] && echo "[receptionist] preloaded workflow imported"
 
+# import:workflow always imports as inactive, so activate explicitly —
+# otherwise the production webhook is never registered
+if n8n update:workflow --id WAReceptionist01 --active=true >>/tmp/import.log 2>&1; then
+  echo "[receptionist] workflow activated"
+else
+  echo "[receptionist] activation failed — toggle 'WhatsApp AI Receptionist' to Active in the n8n editor"
+fi
+
 exec /docker-entrypoint.sh
