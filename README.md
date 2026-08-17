@@ -1,5 +1,7 @@
 # WhatsApp AI Receptionist — a working AI agent on your WhatsApp number, 24/7
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/zOvLHm)
+
 Deploy a **complete, working AI receptionist** for your business WhatsApp number in one click — not raw API plumbing. A customer messages your number; an AI agent (Claude or GPT, using **your own API key**) answers instantly with your business context, hands off to a human on request, and sends an office-hours auto-reply when you're closed.
 
 Built on battle-tested open source: [Evolution API](https://github.com/EvolutionAPI/evolution-api) (9.3k★) for the WhatsApp connection and [n8n](https://github.com/n8n-io/n8n) (201k★) for the agent workflow — preloaded and wired together, so it works the moment you scan a QR code.
@@ -76,3 +78,5 @@ No per-message fees, no per-seat fees, no conversation caps. You pay Railway for
 ---
 
 *Built by [Bubbles Studio](https://bubbles.studio) — we build AI automation systems for businesses. Need a custom WhatsApp agent, CRM integration, or a full automation stack? [Get in touch](https://bubbles.studio).*
+
+*More Bubbles templates: [Postgres S3 Backup](https://railway.com/deploy/sparkling-creation) · [Webhook Inspector](https://railway.com/deploy/webhook-inspector)*
