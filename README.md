@@ -78,4 +78,4 @@ Compared to the SaaS route, there are **no platform fees**: a typical always-on 
 
 *Built by [Bubbles Studio](https://bubbles.studio) — we build AI automation systems for businesses. Need a custom WhatsApp agent, CRM integration, or a full automation stack? [Get in touch](https://bubbles.studio).*
 
-*More Bubbles templates: [Postgres S3 Backup](https://railway.com/deploy/sparkling-creation) · [Webhook Inspector](https://railway.com/deploy/webhook-inspector)*
+*More Bubbles templates: [Claude Agent SDK Worker](https://railway.com/deploy/claude-agent-sdk-worker) · [Postgres S3 Backup](https://railway.com/deploy/sparkling-creation) · [Webhook Inspector](https://railway.com/deploy/webhook-inspector)*
