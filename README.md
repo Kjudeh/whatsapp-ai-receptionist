@@ -1,6 +1,6 @@
 # Deploy and Host WhatsApp AI Receptionist on Railway
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/whatsapp-ai-receptionist)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/whatsapp-ai-receptionist?referralCode=qxxcuG)
 
 Deploy a **complete, working AI receptionist** for your business WhatsApp number in one click — not raw API plumbing. A customer messages your number; an AI agent (Claude or GPT, using **your own API key**) answers instantly with your business context, hands off to a human on request, and sends an office-hours auto-reply when you're closed.
 
@@ -31,6 +31,8 @@ Postgres, Redis, and the Evolution↔n8n webhook are never exposed publicly. Wha
 6. *(Optional)* Set `OFFICE_HOURS` (e.g. `09:00-18:00`) and `GENERIC_TIMEZONE` (e.g. `America/New_York`) on the n8n service for the after-hours auto-reply.
 
 **Built-in behaviors:** instant AI answers with your business context · human handoff (customer types `human` — configurable via `HANDOFF_KEYWORD` — and the bot steps aside with a courtesy message) · office-hours auto-reply · groups and your own outgoing messages are ignored automatically.
+
+**Don't want to set it up yourself?** Bubbles Studio offers a [done-for-you package](https://kjudeh.github.io/bubbles-services/) — installed on your number, AI persona tuned to your business (Arabic/English), live within 48 hours, with optional managed care.
 
 ## Common Use Cases
 
@@ -78,4 +80,4 @@ Compared to the SaaS route, there are **no platform fees**: a typical always-on 
 
 *Built by [Bubbles Studio](https://bubbles.studio) — we build AI automation systems for businesses. Need a custom WhatsApp agent, CRM integration, or a full automation stack? [Get in touch](https://bubbles.studio).*
 
-*More Bubbles templates: [AI Gateway (LiteLLM × Langfuse)](https://railway.com/deploy/ai-gateway-observability-litellm-langfus) · [n8n Production Stack](https://railway.com/deploy/n8n-production-stack-queue-mode) · [Claude Agent SDK Worker](https://railway.com/deploy/claude-agent-sdk-worker) · [Postgres S3 Backup](https://railway.com/deploy/sparkling-creation) · [Webhook Inspector](https://railway.com/deploy/webhook-inspector)*
+*More Bubbles templates: [AI Gateway (LiteLLM × Langfuse)](https://railway.com/deploy/ai-gateway-observability-litellm-langfus?referralCode=qxxcuG) · [n8n Production Stack](https://railway.com/deploy/n8n-production-stack-queue-mode?referralCode=qxxcuG) · [Claude Agent SDK Worker](https://railway.com/deploy/claude-agent-sdk-worker?referralCode=qxxcuG) · [Postgres S3 Backup](https://railway.com/deploy/sparkling-creation?referralCode=qxxcuG) · [Webhook Inspector](https://railway.com/deploy/webhook-inspector?referralCode=qxxcuG)*
